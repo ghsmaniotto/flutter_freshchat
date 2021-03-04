@@ -2,6 +2,10 @@ package com.freshchat.flutter_freshchat;
 
 import android.app.Application;
 import android.util.Log;
+import android.content.BroadcastReceiver;
+import android.content.Context;
+import android.content.Intent;
+import android.content.IntentFilter;
 
 import java.util.ArrayList;
 import java.util.Map;
@@ -22,6 +26,8 @@ import io.flutter.plugin.common.MethodChannel.MethodCallHandler;
 import io.flutter.plugin.common.MethodChannel.Result;
 import io.flutter.plugin.common.PluginRegistry.Registrar;
 
+import androidx.localbroadcastmanager.content.LocalBroadcastManager;
+
 public class FlutterFreshchatPlugin implements MethodCallHandler {
     private final Application application;
 
@@ -34,6 +40,18 @@ public class FlutterFreshchatPlugin implements MethodCallHandler {
     private static final String METHOD_GET_UNREAD_MESSAGE_COUNT = "getUnreadMsgCount";
     private static final String METHOD_SETUP_PUSH_NOTIFICATIONS = "setupPushNotifications";
     private static final String METHOD_SEND_MESSAGE = "send";
+    private static final String METHOD_GET_USER_RESTORE_ID = "getUserRestoreId";
+    private String restoreId = "";
+    private BroadcastReceiver restoreIdReceiver = new BroadcastReceiver() {
+        @Override
+        public void onReceive(Context context, Intent intent) {
+            String receivedRestoreId = Freshchat.getInstance(getApplicationContext()).getUser().getRestoreId();            
+
+            setUserRestoreId(receivedRestoreId);            
+            getLocalBroadcastManager().unregisterReceiver(restoreIdReceiver);
+        }
+
+    };
 
     public static void registerWith(Registrar registrar) {
         final MethodChannel channel = new MethodChannel(registrar.messenger(), "flutter_freshchat");
@@ -42,6 +60,23 @@ public class FlutterFreshchatPlugin implements MethodCallHandler {
 
     private FlutterFreshchatPlugin(Application application) {
         this.application = application;
+    }
+
+    private void registerRestoreIdBroadcastReceiver() {
+        IntentFilter intentFilterRestoreID = new IntentFilter(Freshchat.FRESHCHAT_USER_RESTORE_ID_GENERATED);
+        getLocalBroadcastManager().registerReceiver(restoreIdReceiver, intentFilterRestoreID);
+    }
+
+    private LocalBroadcastManager getLocalBroadcastManager() {
+        return LocalBroadcastManager.getInstance(getApplicationContext());
+    }
+
+    private Context getApplicationContext(){
+        return this.application.getApplicationContext();
+    }
+
+    private void setUserRestoreId(String userRestoreId){
+        this.restoreId = userRestoreId;
     }
 
     @Override
@@ -65,24 +100,29 @@ public class FlutterFreshchatPlugin implements MethodCallHandler {
             freshchatConfig.setTeamMemberInfoVisible(teamMemberInfoVisible);
             freshchatConfig.setDomain(domain);
             Freshchat.getInstance(this.application.getApplicationContext()).init(freshchatConfig);
+            this.registerRestoreIdBroadcastReceiver();
             result.success(true);
+            break;
+        case METHOD_GET_USER_RESTORE_ID:
+            result.success(this.restoreId);
             break;
         case METHOD_IDENTIFY_USER:
             final String externalId = call.argument("externalID");
-            String restoreId = call.argument("restoreID");
+            String receivedRestoreId = call.argument("restoreID");
 
             try {
-                if (restoreId == "") {
+                if (receivedRestoreId.isEmpty()) {
                     Freshchat.getInstance(this.application.getApplicationContext()).identifyUser(externalId, null);
-                    restoreId = Freshchat.getInstance(this.application.getApplicationContext()).getUser().getRestoreId();
+                    this.restoreId = Freshchat.getInstance(this.application.getApplicationContext()).getUser().getRestoreId();
                 } else {
-                    Freshchat.getInstance(this.application.getApplicationContext()).identifyUser(externalId, restoreId);
+                    Freshchat.getInstance(this.application.getApplicationContext()).identifyUser(externalId, receivedRestoreId);
+                    this.restoreId = receivedRestoreId;
                 }
             } catch (MethodNotAllowedException e) {
                 e.printStackTrace();
                 result.error("Error while identifying User", "error", e);
             }
-            result.success(restoreId);
+            result.success(this.restoreId);
             break;
         case METHOD_UPDATE_USER_INFO:
             final String firstName = call.argument("first_name");

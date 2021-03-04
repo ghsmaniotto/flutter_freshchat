@@ -100,6 +100,13 @@ class FlutterFreshchat {
     return result;
   }
 
+  /// Returns a `restoreID` you can save it on your backend
+  /// and use to restore the user chats messages.
+  static Future<String> getUserRestoreId() async {
+    final String result = await _channel.invokeMethod("getUserRestoreId");
+    return result;
+  }
+
   /// Show conversation opens a conversation screen and also list all the other
   /// conversation if a list obejct is supplied to it.
   ///
