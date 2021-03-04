@@ -34,6 +34,8 @@ public class FlutterFreshchatPlugin implements MethodCallHandler {
     private static final String METHOD_GET_UNREAD_MESSAGE_COUNT = "getUnreadMsgCount";
     private static final String METHOD_SETUP_PUSH_NOTIFICATIONS = "setupPushNotifications";
     private static final String METHOD_SEND_MESSAGE = "send";
+    private static final String METHOD_GET_USER_RESTORE_ID = "getUserRestoreId";
+    private String restoreId = "";
 
     public static void registerWith(Registrar registrar) {
         final MethodChannel channel = new MethodChannel(registrar.messenger(), "flutter_freshchat");
@@ -42,6 +44,10 @@ public class FlutterFreshchatPlugin implements MethodCallHandler {
 
     private FlutterFreshchatPlugin(Application application) {
         this.application = application;
+    }
+
+    private void setUserRestoreId(String userRestoreId){
+        this.restoreId = userRestoreId;
     }
 
     @Override
@@ -66,6 +72,9 @@ public class FlutterFreshchatPlugin implements MethodCallHandler {
             freshchatConfig.setDomain(domain);
             Freshchat.getInstance(this.application.getApplicationContext()).init(freshchatConfig);
             result.success(true);
+            break;
+        case METHOD_GET_USER_RESTORE_ID:
+            result.success(this.restoreId);
             break;
         case METHOD_IDENTIFY_USER:
             final String externalId = call.argument("externalID");
