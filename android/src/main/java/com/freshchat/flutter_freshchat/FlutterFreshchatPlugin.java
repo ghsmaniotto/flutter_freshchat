@@ -108,20 +108,21 @@ public class FlutterFreshchatPlugin implements MethodCallHandler {
             break;
         case METHOD_IDENTIFY_USER:
             final String externalId = call.argument("externalID");
-            String restoreId = call.argument("restoreID");
+            String receivedRestoreId = call.argument("restoreID");
 
             try {
-                if (restoreId == "") {
+                if (receivedRestoreId.isEmpty()) {
                     Freshchat.getInstance(this.application.getApplicationContext()).identifyUser(externalId, null);
-                    restoreId = Freshchat.getInstance(this.application.getApplicationContext()).getUser().getRestoreId();
+                    this.restoreId = Freshchat.getInstance(this.application.getApplicationContext()).getUser().getRestoreId();
                 } else {
-                    Freshchat.getInstance(this.application.getApplicationContext()).identifyUser(externalId, restoreId);
+                    Freshchat.getInstance(this.application.getApplicationContext()).identifyUser(externalId, receivedRestoreId);
+                    this.restoreId = receivedRestoreId;
                 }
             } catch (MethodNotAllowedException e) {
                 e.printStackTrace();
                 result.error("Error while identifying User", "error", e);
             }
-            result.success(restoreId);
+            result.success(this.restoreId);
             break;
         case METHOD_UPDATE_USER_INFO:
             final String firstName = call.argument("first_name");
