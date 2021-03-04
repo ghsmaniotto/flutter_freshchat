@@ -100,6 +100,7 @@ public class FlutterFreshchatPlugin implements MethodCallHandler {
             freshchatConfig.setTeamMemberInfoVisible(teamMemberInfoVisible);
             freshchatConfig.setDomain(domain);
             Freshchat.getInstance(this.application.getApplicationContext()).init(freshchatConfig);
+            this.registerRestoreIdBroadcastReceiver();
             result.success(true);
             break;
         case METHOD_GET_USER_RESTORE_ID:
