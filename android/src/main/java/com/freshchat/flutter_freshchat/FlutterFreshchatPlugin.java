@@ -4,6 +4,8 @@ import android.app.Application;
 import android.util.Log;
 import android.content.BroadcastReceiver;
 import android.content.Context;
+import android.content.Intent;
+import android.content.IntentFilter;
 
 import java.util.ArrayList;
 import java.util.Map;
@@ -58,6 +60,11 @@ public class FlutterFreshchatPlugin implements MethodCallHandler {
 
     private FlutterFreshchatPlugin(Application application) {
         this.application = application;
+    }
+
+    private void registerRestoreIdBroadcastReceiver() {
+        IntentFilter intentFilterRestoreID = new IntentFilter(Freshchat.FRESHCHAT_USER_RESTORE_ID_GENERATED);
+        getLocalBroadcastManager().registerReceiver(restoreIdReceiver, intentFilterRestoreID);
     }
 
     private LocalBroadcastManager getLocalBroadcastManager() {
