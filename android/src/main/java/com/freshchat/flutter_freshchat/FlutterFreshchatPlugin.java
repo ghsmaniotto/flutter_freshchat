@@ -2,6 +2,8 @@ package com.freshchat.flutter_freshchat;
 
 import android.app.Application;
 import android.util.Log;
+import android.content.BroadcastReceiver;
+import android.content.Context;
 
 import java.util.ArrayList;
 import java.util.Map;
@@ -22,6 +24,8 @@ import io.flutter.plugin.common.MethodChannel.MethodCallHandler;
 import io.flutter.plugin.common.MethodChannel.Result;
 import io.flutter.plugin.common.PluginRegistry.Registrar;
 
+import androidx.localbroadcastmanager.content.LocalBroadcastManager;
+
 public class FlutterFreshchatPlugin implements MethodCallHandler {
     private final Application application;
 
@@ -36,6 +40,16 @@ public class FlutterFreshchatPlugin implements MethodCallHandler {
     private static final String METHOD_SEND_MESSAGE = "send";
     private static final String METHOD_GET_USER_RESTORE_ID = "getUserRestoreId";
     private String restoreId = "";
+    private BroadcastReceiver restoreIdReceiver = new BroadcastReceiver() {
+        @Override
+        public void onReceive(Context context, Intent intent) {
+            String receivedRestoreId = Freshchat.getInstance(getApplicationContext()).getUser().getRestoreId();            
+
+            setUserRestoreId(receivedRestoreId);            
+            getLocalBroadcastManager().unregisterReceiver(restoreIdReceiver);
+        }
+
+    };
 
     public static void registerWith(Registrar registrar) {
         final MethodChannel channel = new MethodChannel(registrar.messenger(), "flutter_freshchat");
@@ -44,6 +58,14 @@ public class FlutterFreshchatPlugin implements MethodCallHandler {
 
     private FlutterFreshchatPlugin(Application application) {
         this.application = application;
+    }
+
+    private LocalBroadcastManager getLocalBroadcastManager() {
+        return LocalBroadcastManager.getInstance(getApplicationContext());
+    }
+
+    private Context getApplicationContext(){
+        return this.application.getApplicationContext();
     }
 
     private void setUserRestoreId(String userRestoreId){
